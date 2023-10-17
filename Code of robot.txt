@@ -1,0 +1,208 @@
+#include <NewPing.h>
+#include <Servo.h>
+
+
+// 定义五种运动状态
+#define STOP 1
+#define FORWARD 2
+#define BACKWARD 3
+#define TURNLEFT 4
+#define TURNRIGHT 5
+
+#define TRIGGER_PIN_FRONT 34   // 前方超声波传感器的触发引脚
+#define ECHO_PIN_FRONT 35      // 前方超声波传感器的回声引脚
+#define TRIGGER_PIN_LEFT 36    // 左侧超声波传感器的触发引脚
+#define ECHO_PIN_LEFT 37      // 左侧超声波传感器的回声引脚
+#define TRIGGER_PIN_RIGHT 38  // 右侧超声波传感器的触发引脚
+#define ECHO_PIN_RIGHT 39     // 右侧超声波传感器的回声引脚
+#define MAX_DISTANCE 200      // 超声波传感器的最大检测距离（单位：厘米）
+
+int s0 = 22; // 定义颜色传感器引脚
+int s1 = 24; // 定义颜色传感器引脚
+int s2 = 26; // 定义颜色传感器引脚
+int s3 = 28; // 定义颜色传感器引脚
+int outPin = 30; // 定义颜色传感器输出脚
+
+// 定义需要用到的引脚
+int leftforMotor1 = 8;
+int leftforMotor2 = 9;
+int rightforMotor1 = 10;
+int rightforMotor2 = 11;
+int leftbacMotor1 = 4;
+int leftbacMotor2 = 5;
+int rightbacMotor1 = 6;
+int rightbacMotor2 = 7;
+//控制马达速率的引脚
+int PWML1 = 12;
+int PWML2 = 13;
+int PWMR1 = 2;
+int PWMR2 = 3;
+
+
+
+
+// 创建超声波传感器对象
+NewPing frontSensor(TRIGGER_PIN_FRONT, ECHO_PIN_FRONT, MAX_DISTANCE);
+NewPing leftSensor(TRIGGER_PIN_LEFT, ECHO_PIN_LEFT, MAX_DISTANCE);
+NewPing rightSensor(TRIGGER_PIN_RIGHT, ECHO_PIN_RIGHT, MAX_DISTANCE);
+
+// 函数声明
+void controlMotor(int leftfor, int leftbac, int rightfor, int rightbac);
+void moveForward();
+void moveBackward();
+void turnLeft();
+void turnRight();
+void stop();
+
+void setup() {
+  
+ 
+  
+  Serial.begin(9600);
+  pinMode(leftforMotor1, OUTPUT);
+  pinMode(leftforMotor2, OUTPUT);
+  pinMode(rightforMotor1, OUTPUT);
+  pinMode(rightforMotor2, OUTPUT);
+  pinMode(leftbacMotor1, OUTPUT);
+  pinMode(leftbacMotor2, OUTPUT);
+  pinMode(rightbacMotor1, OUTPUT);
+  pinMode(rightbacMotor2, OUTPUT);
+  pinMode(PWML1, OUTPUT);
+  pinMode(PWML2, OUTPUT);
+  pinMode(PWMR1, OUTPUT);
+  pinMode(PWMR2, OUTPUT);
+
+  pinMode(s0, OUTPUT);
+  pinMode(s1, OUTPUT);
+  pinMode(s2, OUTPUT);
+  pinMode(s3, OUTPUT);
+  pinMode(outPin, INPUT);
+  digitalWrite(s0, HIGH);
+  digitalWrite(s1, LOW);
+}
+
+void loop() {
+  int cmd;
+  int frontDistance = frontSensor.ping_cm();
+  int leftDistance = leftSensor.ping_cm();
+  int rightDistance = rightSensor.ping_cm();
+
+  if (frontDistance <= 18){
+
+     if((leftDistance-rightDistance)>=5) {
+       if(rightDistance<=7)
+       {
+         moveBackward();
+         delay(140);
+         turnLeft();
+         delay(195);
+       }
+      else{
+      stop();
+      delay(150);
+      turnLeft();
+      delay(550);
+      }
+
+      }
+
+
+      else if ((rightDistance-leftDistance)>=5){
+        if(leftDistance<=7)
+         {
+         moveBackward();
+         delay(140);
+         turnRight();
+         delay(195);
+         }
+        else{
+        stop();
+        delay(150);
+        turnRight();
+        delay(550);
+             }
+      }
+
+       else{
+         moveForward();
+         delay(5);
+       }      
+  }
+  else {
+        // 没有障碍物，直行
+       moveForward();
+       delay(5);
+        } 
+  if (checkTreasure()) {
+       stop();
+       delay(1000);
+       moveBackward();
+      delay(300);
+       stop();
+       delay(2000);
+       turnRight();
+       delay(800);
+  }
+}
+
+
+void controlMotor(int leftfor, int leftbac, int rightfor, int rightbac) {
+  analogWrite(PWML1,130);
+  analogWrite(PWML2,130);
+  analogWrite(PWMR1,130);
+  analogWrite(PWMR2,130);
+
+  digitalWrite(leftforMotor1, leftfor);
+  digitalWrite(leftforMotor2, leftbac);
+  digitalWrite(rightforMotor1, rightfor);
+  digitalWrite(rightforMotor2, rightbac);
+  digitalWrite(leftbacMotor1, leftfor);
+  digitalWrite(leftbacMotor2, leftbac);
+  digitalWrite(rightbacMotor1, rightfor);
+  digitalWrite(rightbacMotor2, rightbac);
+}
+
+void moveForward() {
+  controlMotor(LOW, HIGH, LOW, HIGH);
+   
+}
+
+void moveBackward() {
+  controlMotor(HIGH, LOW, HIGH, LOW);
+ 
+}
+
+void turnLeft() {
+  controlMotor(HIGH, LOW, LOW, HIGH);
+  
+}
+
+void turnRight() {
+  controlMotor(LOW, HIGH, HIGH, LOW);
+   
+}
+
+void stop() {
+  controlMotor(LOW, LOW, LOW, LOW);
+}
+
+
+bool checkTreasure() {
+  digitalWrite(s2, LOW);
+  digitalWrite(s3, LOW);
+  int red = pulseIn(outPin, digitalRead(outPin) == HIGH ? LOW : HIGH);
+  
+  digitalWrite(s2, HIGH);
+  digitalWrite(s3, HIGH);
+  int green = pulseIn(outPin, digitalRead(outPin) == HIGH ? LOW : HIGH);
+  
+  digitalWrite(s2, LOW);
+  digitalWrite(s3, HIGH);
+  int blue = pulseIn(outPin, digitalRead(outPin) == HIGH ? LOW : HIGH);
+
+  if (green < 145 && blue < 145 ) {
+    return true;
+  } else {
+    return false;
+  }
+}
