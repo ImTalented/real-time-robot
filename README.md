@@ -1,7 +1,8 @@
 # real-time-robot
 Design &amp; Build 2 Project
 
-## real-time-robot
+## real-time-robot.zip
+(Due to the limit on the number of files uploaded on github, I did a compression here, and its name is real-time-robot.zip)
 
 This folder contains the web source code and the pattern recognition model best-pt
 
